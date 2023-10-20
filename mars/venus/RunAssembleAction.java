@@ -11,7 +11,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 
 import javax.swing.Action;
@@ -148,57 +152,28 @@ public class RunAssembleAction extends GuiAction {
 		try {
 			String prompt = "Faça o seguinte codigo em assembly mips, retorne apenas o codigo, não quero explicações: "
 					+ input;
-			String url = "https://api.openai.com/v1/chat/completions";
+			String uri = "https://api.openai.com/v1/chat/completions";
 			String apiKey = "";
 			String model = "gpt-3.5-turbo";
 
-			URL urlObj = new URL(url);
-			HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
-
-			connection.setRequestMethod("POST");
-			connection.setRequestProperty("Authorization", "Bearer " + apiKey);
-			connection.setRequestProperty("Content-Type", "application/json");
-
-			// String body = "{\"model\": \"" + model + "\", \"messages\": [{\"role\":
-			// \"user\", \"content\": \"" + prompt
-			// + "\"}]}";
 			String body = "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"" + prompt
 					+ "\"\n\t\t}\n\t],\n\t\"temperature\": 1,\n\t\"max_tokens\": 256,\n\t\"top_p\": 1,\n\t\"frequency_penalty\": 0,\n\t\"presence_penalty\": 0,\n\t\"model\": \""
 					+ model + "\",\n\t\"stream\": false\n}";
 
-			connection.setDoOutput(true);
-			OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-			writer.write(body);
-			writer.flush();
-			writer.close();
+			HttpRequest request = HttpRequest.newBuilder()
+					.uri(URI.create(uri))
+					.header("Content-Type", "application/json")
+					.header("Authorization", "Bearer " + apiKey)
+					.method("POST", HttpRequest.BodyPublishers.ofString(body))
+					.build();
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-			String line;
+			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+			System.out.println(response.body());
 
-			StringBuffer response = new StringBuffer();
-
-			while ((line = br.readLine()) != null) {
-				response.append(line);
-			}
-			br.close();
-
-			String extractedMessage = extractMessageFromJSONResponse(response.toString());
-			System.out.println(extractedMessage);
-
-			// writeInFile(file, "#batatinha");
+			writeInFile(file, response.body().split("content")[1]);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
-	}
-
-	// edited ('‿') @CJ@
-	public static String extractMessageFromJSONResponse(String response) {
-		int start = response.indexOf("content") + 11;
-
-		int end = response.indexOf("\"", start);
-
-		return response.substring(start, end);
-
 	}
 
 	@Override
