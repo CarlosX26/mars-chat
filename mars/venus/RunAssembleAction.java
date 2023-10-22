@@ -6,13 +6,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
+
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -33,6 +28,9 @@ import mars.mips.hardware.Memory;
 import mars.mips.hardware.RegisterFile;
 import mars.util.FilenameFinder;
 import mars.util.SystemIO;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 /*
  * Copyright (c) 2003-2010, Pete Sanderson and Kenneth Vollmar
@@ -156,9 +154,26 @@ public class RunAssembleAction extends GuiAction {
 			String apiKey = "";
 			String model = "gpt-3.5-turbo";
 
-			String body = "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"" + prompt
-					+ "\"\n\t\t}\n\t],\n\t\"temperature\": 1,\n\t\"max_tokens\": 256,\n\t\"top_p\": 1,\n\t\"frequency_penalty\": 0,\n\t\"presence_penalty\": 0,\n\t\"model\": \""
-					+ model + "\",\n\t\"stream\": false\n}";
+			// String body = "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\":
+			// \"user\",\n\t\t\t\"content\": \"" + prompt
+			// + "\"\n\t\t}\n\t],\n\t\"temperature\": 1,\n\t\"max_tokens\":
+			// 256,\n\t\"top_p\": 1,\n\t\"frequency_penalty\": 0,\n\t\"presence_penalty\":
+			// 0,\n\t\"model\": \""
+			// + model + "\",\n\t\"stream\": false\n}";
+
+			String body = new JSONObject()
+					.put("messages", new JSONArray()
+							.put(new JSONObject()
+									.put("role", "user")
+									.put("content", prompt)))
+					.put("temperature", 1)
+					.put("max_tokens", 256)
+					.put("top_p", 1)
+					.put("frequency_penalty", 0)
+					.put("presence_penalty", 0)
+					.put("model", model)
+					.put("stream", false)
+					.toString();
 
 			HttpRequest request = HttpRequest.newBuilder()
 					.uri(URI.create(uri))
@@ -168,9 +183,22 @@ public class RunAssembleAction extends GuiAction {
 					.build();
 
 			HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-			System.out.println(response.body());
 
-			writeInFile(file, response.body().split("content")[1]);
+			JSONObject jsonResponse = new JSONObject(response.body());
+
+			JSONArray choicesArray = jsonResponse.getJSONArray("choices");
+
+			if (choicesArray.length() > 0) {
+				JSONObject firstChoice = choicesArray.getJSONObject(0);
+
+				JSONObject message = firstChoice.getJSONObject("message");
+
+				String contentValue = message.getString("content");
+				writeInFile(file, contentValue);
+
+			} else {
+				System.out.println("A matriz 'choices' está vazia.");
+			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
