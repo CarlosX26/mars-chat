@@ -1,4 +1,4 @@
-# Theme Engine for MARS (MIPS Assembler and Runtime Simulator)
+# MARS (MIPS Assembler and Runtime Simulator) CHAT
 
 <div align="center">
 
