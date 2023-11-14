@@ -23,11 +23,11 @@ Segue abaixo o link para a aplicação base que utilizei: [projeto base](https:/
 acesse -> [mars/venus/RunAssembleAction.java/RunAssembleAction/sendQuestionToGpt]
 coloque sua API KEY do gpt
 ```code
-	public void sendQuestionToGpt(String input, final String file) {
+public void sendQuestionToGpt(String input, final String file) {
     ...
     String apiKey = "";
     ...
-  }
+}
 ```
 
 # modo de uso
